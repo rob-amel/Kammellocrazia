@@ -6,10 +6,9 @@ import time
 # --- CONFIGURAZIONE ---
 st.set_page_config(page_title="Elezioni Amel Italia", layout="wide")
 
-# CSS AGGIORNATO PER ALLINEAMENTO PERFETTO E SUPPORTO TEMA CHIARO/SCURO
+# CSS PER ALLINEAMENTO PERFETTO E SUPPORTO TEMA
 st.markdown("""
     <style>
-    /* Uniforma gli slot dei nomi (subheader) */
     .stMarkdown h3 {
         text-align: center;
         font-size: 1rem !important;
@@ -19,13 +18,12 @@ st.markdown("""
         border-radius: 8px;
         border: 1px solid rgba(128, 128, 128, 0.2);
         margin-bottom: 10px !important;
-        min-height: 70px; /* Altezza fissa per allineare le foto sotto */
+        min-height: 70px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    /* Centratura e uniformità immagini */
     [data-testid="stImage"] {
         display: flex;
         justify-content: center;
@@ -35,14 +33,13 @@ st.markdown("""
     [data-testid="stImage"] img {
         border-radius: 12px;
         width: 100% !important;
-        height: 180px !important; /* Altezza fissa per garantire l'allineamento orizzontale */
-        object-fit: cover !important; /* Ritaglia l'immagine per riempire lo spazio senza distorcere */
+        height: 180px !important; 
+        object-fit: cover !important; 
         max-width: 180px !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         border: 1px solid rgba(128, 128, 128, 0.2);
     }
     
-    /* Riduce lo spazio tra le colonne per far stare tutto in una riga se possibile */
     [data-testid="column"] {
         padding: 0 5px !important;
     }
@@ -84,81 +81,101 @@ def salva_voto(voto, nome):
     with open(FILE_REGISTRO_VOTANTI, "a") as f:
         f.write(nome + "\n")
 
-# --- LOGIN ---
+# --- GESTIONE SESSIONE E LINGUA ---
 if 'loggato' not in st.session_state:
     st.session_state.loggato, st.session_state.nome_voto = False, ""
+    st.session_state.lang = "it"
 
+# --- LOGIN ---
 if not st.session_state.loggato:
     st.title("🗳️ Accesso Elezioni Amel Italia")
-    scelta = st.selectbox("Seleziona il tuo nome:", ["-- Scegli dalla lista --"] + SOCI_AUTORIZZATI)
-    if st.button("ACCEDI"):
+    scelta = st.selectbox("Seleziona il tuo nome / Select your name:", ["-- Scegli dalla lista --"] + SOCI_AUTORIZZATI)
+    if st.button("ACCEDI / LOGIN"):
         if scelta != "-- Scegli dalla lista --":
             if ha_gia_votato(scelta): 
-                st.error("Hai già votato.")
+                st.error("Hai già votato / You have already voted.")
             else:
-                st.session_state.loggato, st.session_state.nome_voto = True, scelta
+                st.session_state.loggato = True
+                st.session_state.nome_voto = scelta
+                # Imposta inglese se l'utente è Alaa
+                st.session_state.lang = "en" if scelta == "Alaa" else "it"
                 st.rerun()
-    
-    with st.sidebar:
-        if st.text_input("Password Admin", type="password") == "K_ammello123":
-            if os.path.isfile(FILE_RISULTATI):
-                st.download_button("SCARICA RISULTATI", pd.read_csv(FILE_RISULTATI).to_csv(index=False), "voti.csv")
     st.stop()
 
-# --- INTERFACCIA DI VOTO ---
-st.title(f"Scheda Elettorale: {st.session_state.nome_voto}")
+# --- DIZIONARIO TRADUZIONI ---
+texts = {
+    "it": {
+        "title": "Scheda Elettorale",
+        "socio": "Socio",
+        "h1": "1. Elezione del Presidente",
+        "h2": "2. Elezione del Consiglio Direttivo",
+        "pick_p": "Scegli il Presidente:",
+        "pick_c_info": "Seleziona 4 membri diversi per il Consiglio:",
+        "c_label": "Consigliere",
+        "submit": "INVIA VOTO DEFINITIVO",
+        "error": "⚠️ Errore: seleziona tutti i candidati richiesti.",
+        "success": "Voto registrato con successo!",
+        "footer": "La sessione verrà chiusa."
+    },
+    "en": {
+        "title": "Ballot Paper",
+        "socio": "Member",
+        "h1": "1. Election of the President",
+        "h2": "2. Election of the Board of Directors",
+        "pick_p": "Choose the President:",
+        "pick_c_info": "Select 4 different members for the Board:",
+        "c_label": "Board Member",
+        "submit": "SUBMIT FINAL VOTE",
+        "error": "⚠️ Error: Please select all required candidates.",
+        "success": "Vote registered successfully!",
+        "footer": "Session will be closed."
+    }
+}
+L = texts[st.session_state.lang]
 
-# 1. SEZIONE PRESIDENTE (Candidati + Votazione)
-st.header("1. Elezione del Presidente")
+# --- INTERFACCIA DI VOTO ---
+st.title(f"{L['title']}: {st.session_state.nome_voto}")
+
+# 1. SEZIONE PRESIDENTE
+st.header(L['h1'])
 cols_p = st.columns(len(CANDIDATI_P))
 for i, (nome, img_path) in enumerate(CANDIDATI_P.items()):
     with cols_p[i]:
         st.subheader(nome)
         if os.path.exists(img_path):
             st.image(img_path)
-        else:
-            st.info("Immagine non disponibile")
 
-v_pres = st.selectbox("Scegli il Presidente:", ["-- Seleziona --"] + list(CANDIDATI_P.keys()), key="voto_p")
+v_pres = st.selectbox(L['pick_p'], ["-- Seleziona/Select --"] + list(CANDIDATI_P.keys()))
 
 st.divider()
 
-# 2. SEZIONE CONSIGLIO (Candidati + Votazione)
-st.header("2. Elezione del Consiglio Direttivo")
-
-# Visualizzazione Candidati Consiglio (Allineati)
+# 2. SEZIONE CONSIGLIO
+st.header(L['h2'])
 cols_c = st.columns(len(CANDIDATI_C))
 for i, (nome, img_path) in enumerate(CANDIDATI_C.items()):
     with cols_c[i]:
         st.subheader(nome)
         if os.path.exists(img_path):
             st.image(img_path)
-        else:
-            st.info("Immagine non disponibile")
 
-st.info("Seleziona 4 membri diversi per il Consiglio:")
+st.info(L['pick_c_info'])
 c_list = list(CANDIDATI_C.keys())
 
-# Menu a discesa per i Consiglieri
-s1 = st.selectbox("Consigliere 1", ["-- Seleziona --"] + c_list, key="c1")
-s2 = st.selectbox("Consigliere 2", ["-- Seleziona --"] + [c for c in c_list if c != s1], key="c2")
-s3 = st.selectbox("Consigliere 3", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2]], key="c3")
-s4 = st.selectbox("Consigliere 4", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2, s3]], key="c4")
+s1 = st.selectbox(f"{L['c_label']} 1", ["-- Seleziona/Select --"] + c_list)
+s2 = st.selectbox(f"{L['c_label']} 2", ["-- Seleziona/Select --"] + [c for c in c_list if c != s1])
+s3 = st.selectbox(f"{L['c_label']} 3", ["-- Seleziona/Select --"] + [c for c in c_list if c not in [s1, s2]])
+s4 = st.selectbox(f"{L['c_label']} 4", ["-- Seleziona/Select --"] + [c for c in c_list if c not in [s1, s2, s3]])
 
 st.divider()
 
-# INVIO VOTO
-if st.button("INVIA VOTO DEFINITIVO"):
+if st.button(L['submit']):
     voti_c = [s1, s2, s3, s4]
-    if v_pres == "-- Seleziona --" or "-- Seleziona --" in voti_c:
-        st.error("⚠️ Errore: Assicurati di aver selezionato il Presidente e tutti i 4 Consiglieri.")
+    if "-- Seleziona/Select --" in [v_pres] + voti_c:
+        st.error(L['error'])
     else:
-        voto_finale = {
-            "Presidente": v_pres, 
-            "Cons_1": s1, "Cons_2": s2, "Cons_3": s3, "Cons_4": s4
-        }
+        voto_finale = {"Presidente": v_pres, "C1": s1, "C2": s2, "C3": s3, "C4": s4}
         salva_voto(voto_finale, st.session_state.nome_voto)
-        st.success("Voto registrato con successo!")
+        st.success(L['success'])
         st.balloons()
         time.sleep(2)
         st.session_state.loggato = False
