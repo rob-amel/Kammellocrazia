@@ -6,39 +6,45 @@ import time
 # --- CONFIGURAZIONE ---
 st.set_page_config(page_title="Elezioni Amel Italia", layout="wide")
 
-# CSS PER USARE GLI SLOT PER I NOMI E CENTRARE LE FOTO
+# CSS AGGIORNATO PER ALLINEAMENTO PERFETTO E SUPPORTO TEMA CHIARO/SCURO
 st.markdown("""
     <style>
-    /* Stile per il testo del nome dentro lo slot (header della colonna) */
+    /* Uniforma gli slot dei nomi (subheader) */
     .stMarkdown h3 {
         text-align: center;
-        font-size: 1.1rem !important;
-        background-color: #262730; /* Colore scuro coordinato */
-        color: white;
-        padding: 5px;
-        border-radius: 5px;
-        margin-bottom: 15px !important;
+        font-size: 1rem !important;
+        background-color: rgba(128, 128, 128, 0.1); 
+        color: inherit;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        margin-bottom: 10px !important;
+        min-height: 70px; /* Altezza fissa per allineare le foto sotto */
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* Centratura e distanziamento foto */
+    /* Centratura e uniformità immagini */
     [data-testid="stImage"] {
         display: flex;
         justify-content: center;
-        padding-top: 10px;
         padding-bottom: 20px;
     }
 
     [data-testid="stImage"] img {
-        border-radius: 10px;
+        border-radius: 12px;
         width: 100% !important;
-        height: auto !important;
-        max-width: 180px !important; /* Leggermente più piccole per centrarle meglio */
-        border: 2px solid #444;
+        height: 180px !important; /* Altezza fissa per garantire l'allineamento orizzontale */
+        object-fit: cover !important; /* Ritaglia l'immagine per riempire lo spazio senza distorcere */
+        max-width: 180px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border: 1px solid rgba(128, 128, 128, 0.2);
     }
     
-    /* Rimuove margini extra dalle colonne */
+    /* Riduce lo spazio tra le colonne per far stare tutto in una riga se possibile */
     [data-testid="column"] {
-        padding: 0 10px !important;
+        padding: 0 5px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -59,7 +65,7 @@ CANDIDATI_P = {
 
 CANDIDATI_C = {
     "Lorenzo Cogliolo": "img/Lorenzo Cogliolo.jpg",
-    "Margherita Monti": "img/Margherita Monti.jpg",
+    "Margherita Monti 2": "img/Margherita Monti.jpg",
     "Marco Zac Di Fraia": "img/Marco Zac Di Fraia.jpg",
     "Mara Moreale": "img/Mara Moreale.jpg",
     "Consigliere 5": "img/c5.jpg",
@@ -102,50 +108,58 @@ if not st.session_state.loggato:
 # --- INTERFACCIA DI VOTO ---
 st.title(f"Scheda Elettorale: {st.session_state.nome_voto}")
 
-# SEZIONE PRESIDENTE
-st.header("Candidati alla Presidenza")
+# 1. SEZIONE PRESIDENTE (Candidati + Votazione)
+st.header("1. Elezione del Presidente")
 cols_p = st.columns(len(CANDIDATI_P))
 for i, (nome, img_path) in enumerate(CANDIDATI_P.items()):
     with cols_p[i]:
-        st.subheader(nome) # Inserisce il nome nello slot superiore
+        st.subheader(nome)
         if os.path.exists(img_path):
             st.image(img_path)
         else:
             st.info("Immagine non disponibile")
 
-# SEZIONE CONSIGLIO
-st.header("Candidati al Consiglio Direttivo")
-cols_c = st.columns(len(CANDIDATI_C))
-for i, (nome, img_path) in enumerate(CANDIDATI_C.items()):
-    with cols_c[i]:
-        st.subheader(nome) # Inserisce il nome nello slot superiore
-        if os.path.exists(img_path):
-            st.image(img_path)
-        else:
-            st.info("Immagine non disponibile")
+v_pres = st.selectbox("Scegli il Presidente:", ["-- Seleziona --"] + list(CANDIDATI_P.keys()), key="voto_p")
 
 st.divider()
 
-# SEZIONE SELEZIONE
-st.header("Esprimi il tuo voto")
-v_pres = st.selectbox("Presidente:", ["-- Seleziona --"] + list(CANDIDATI_P.keys()))
+# 2. SEZIONE CONSIGLIO (Candidati + Votazione)
+st.header("2. Elezione del Consiglio Direttivo")
 
-st.subheader("Membri del Consiglio")
+# Visualizzazione Candidati Consiglio (Allineati)
+cols_c = st.columns(len(CANDIDATI_C))
+for i, (nome, img_path) in enumerate(CANDIDATI_C.items()):
+    with cols_c[i]:
+        st.subheader(nome)
+        if os.path.exists(img_path):
+            st.image(img_path)
+        else:
+            st.info("Immagine non disponibile")
+
+st.info("Seleziona 4 membri diversi per il Consiglio:")
 c_list = list(CANDIDATI_C.keys())
-s1 = st.selectbox("Consigliere 1", ["-- Seleziona --"] + c_list)
-s2 = st.selectbox("Consigliere 2", ["-- Seleziona --"] + [c for c in c_list if c != s1])
-s3 = st.selectbox("Consigliere 3", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2]])
-s4 = st.selectbox("Consigliere 4", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2, s3]])
 
+# Menu a discesa per i Consiglieri
+s1 = st.selectbox("Consigliere 1", ["-- Seleziona --"] + c_list, key="c1")
+s2 = st.selectbox("Consigliere 2", ["-- Seleziona --"] + [c for c in c_list if c != s1], key="c2")
+s3 = st.selectbox("Consigliere 3", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2]], key="c3")
+s4 = st.selectbox("Consigliere 4", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2, s3]], key="c4")
+
+st.divider()
+
+# INVIO VOTO
 if st.button("INVIA VOTO DEFINITIVO"):
-    if "-- Seleziona --" in [v_pres, s1, s2, s3, s4]:
-        st.error("⚠️ Errore: seleziona tutti i candidati richiesti.")
+    voti_c = [s1, s2, s3, s4]
+    if v_pres == "-- Seleziona --" or "-- Seleziona --" in voti_c:
+        st.error("⚠️ Errore: Assicurati di aver selezionato il Presidente e tutti i 4 Consiglieri.")
     else:
-        voto = {"Presidente": v_pres, "C1": s1, "C2": s2, "C3": s3, "C4": s4}
-        salva_voto(voto, st.session_state.nome_voto)
+        voto_finale = {
+            "Presidente": v_pres, 
+            "Cons_1": s1, "Cons_2": s2, "Cons_3": s3, "Cons_4": s4
+        }
+        salva_voto(voto_finale, st.session_state.nome_voto)
         st.success("Voto registrato con successo!")
         st.balloons()
         time.sleep(2)
         st.session_state.loggato = False
         st.rerun()
-
