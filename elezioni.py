@@ -6,27 +6,22 @@ import time
 # --- CONFIGURAZIONE ---
 st.set_page_config(page_title="Elezioni Amel Italia", layout="wide")
 
-# CSS OTTIMIZZATO: Forza l'arrotondamento rimuovendo i contenitori bianchi di Streamlit
+# CSS semplificato: solo per pulizia e uniformità dei box
 st.markdown("""
     <style>
     .candidate-card {
         text-align: center;
-        padding: 15px;
+        padding: 10px;
         border: 1px solid #eee;
-        border-radius: 15px;
-        background-color: #ffffff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border-radius: 10px;
+        background-color: #fcfcfc;
     }
-    /* Selettore mirato per l'immagine interna */
-    [data-testid="stImage"] > img {
-        border-radius: 50% !important;
-        aspect-ratio: 1 / 1 !important;
-        object-fit: cover !important;
-        border: 4px solid #007bff !important;
-        width: 150px !important;
-        height: 150px !important;
-        margin-left: auto;
-        margin-right: auto;
+    /* Forza tutte le immagini alla stessa larghezza */
+    [data-testid="stImage"] img {
+        width: 100% !important;
+        height: auto !important;
+        max-width: 200px !important;
+        margin: 0 auto;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -34,14 +29,13 @@ st.markdown("""
 FILE_RISULTATI = "risultati_anonimi.csv"
 FILE_REGISTRO_VOTANTI = "registro_voto_effettuato.txt"
 
-# LISTA SOCI AGGIORNATA
 SOCI_AUTORIZZATI = sorted([
     "Roberto R", "Roberto V", "Andrea", "Marco", "Mara", "Federica", "Giulia", 
     "Chiara", "Alaa", "Costanza", "Lorenzo", "Margherita", "Sofia", 
     "Stefania", "Marcello", "Matilde", "Tommaso", "Leonardo"
 ])
 
-# DATI CANDIDATI (Nomi e percorsi aggiornati)
+# DATI CANDIDATI
 CANDIDATI_P = {
     "Roberto Renino": "img/Roberto Renino.jpg",
     "Candidato Pres B": "img/pres_b.jpg"
@@ -78,82 +72,67 @@ if not st.session_state.loggato:
     if st.button("ACCEDI"):
         if scelta != "-- Scegli dalla lista --":
             if ha_gia_votato(scelta): 
-                st.error(f"Spiacente, {scelta} ha già votato.")
+                st.error("Hai già votato.")
             else:
                 st.session_state.loggato, st.session_state.nome_voto = True, scelta
                 st.rerun()
     
     with st.sidebar:
-        st.header("Area Amministratore")
         if st.text_input("Password Admin", type="password") == "K_ammello123":
             if os.path.isfile(FILE_RISULTATI):
-                st.download_button("SCARICA RISULTATI CSV", pd.read_csv(FILE_RISULTATI).to_csv(index=False), "voti_elezioni.csv")
-            else:
-                st.info("Nessun voto registrato.")
+                st.download_button("SCARICA RISULTATI", pd.read_csv(FILE_RISULTATI).to_csv(index=False), "voti.csv")
     st.stop()
 
 # --- INTERFACCIA DI VOTO ---
 st.title(f"Scheda Elettorale: {st.session_state.nome_voto}")
 
-# VISUALIZZAZIONE FOTO CANDIDATI
+# SEZIONE PRESIDENTE
 st.header("Candidati alla Presidenza")
 cols_p = st.columns(len(CANDIDATI_P))
 for i, (nome, img_path) in enumerate(CANDIDATI_P.items()):
     with cols_p[i]:
         st.markdown('<div class="candidate-card">', unsafe_allow_html=True)
         if os.path.exists(img_path):
-            st.image(img_path)
+            st.image(img_path, use_container_width=True)
         else:
-            st.warning(f"Foto di {nome} non trovata")
+            st.info(f"Foto: {nome}")
         st.write(f"**{nome}**")
         st.markdown('</div>', unsafe_allow_html=True)
 
+# SEZIONE CONSIGLIO (Stessa dimensione)
 st.header("Candidati al Consiglio Direttivo")
 cols_c = st.columns(len(CANDIDATI_C))
 for i, (nome, img_path) in enumerate(CANDIDATI_C.items()):
     with cols_c[i]:
         st.markdown('<div class="candidate-card">', unsafe_allow_html=True)
         if os.path.exists(img_path):
-            st.image(img_path)
+            st.image(img_path, use_container_width=True)
         else:
-            st.warning(f"Foto di {nome} non trovata")
+            st.info(f"Foto: {nome}")
         st.write(f"**{nome}**")
         st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
-# SEZIONE SELEZIONE (DINAMICA - Scomparsa nomi già scelti)
+# SEZIONE SELEZIONE
 st.header("Esprimi il tuo voto")
-v_pres = st.selectbox("Seleziona il Presidente:", ["-- Seleziona --"] + list(CANDIDATI_P.keys()))
+v_pres = st.selectbox("Presidente:", ["-- Seleziona --"] + list(CANDIDATI_P.keys()))
 
 st.subheader("Membri del Consiglio")
-st.info("Scegli 4 membri diversi. Ogni nome selezionato sparirà dagli slot successivi.")
 c_list = list(CANDIDATI_C.keys())
-
 s1 = st.selectbox("Consigliere 1", ["-- Seleziona --"] + c_list)
 s2 = st.selectbox("Consigliere 2", ["-- Seleziona --"] + [c for c in c_list if c != s1])
 s3 = st.selectbox("Consigliere 3", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2]])
 s4 = st.selectbox("Consigliere 4", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2, s3]])
 
-st.divider()
-
 if st.button("INVIA VOTO DEFINITIVO"):
-    voti_c = [s1, s2, s3, s4]
-    if "-- Seleziona --" in [v_pres] + voti_c:
-        st.error("⚠️ Errore: Devi selezionare tutti i 5 candidati richiesti (1 Presidente e 4 Consiglieri).")
+    if "-- Seleziona --" in [v_pres, s1, s2, s3, s4]:
+        st.error("⚠️ Errore: seleziona tutte le 5 cariche richieste.")
     else:
-        voto_finale = {
-            "Presidente": v_pres, 
-            "Consigliere_1": s1, 
-            "Consigliere_2": s2, 
-            "Consigliere_3": s3, 
-            "Consigliere_4": s4
-        }
-        salva_voto(voto_finale, st.session_state.nome_voto)
-        st.success("Voto registrato con successo! La sessione verrà chiusa.")
+        voto = {"Presidente": v_pres, "C1": s1, "C2": s2, "C3": s3, "C4": s4}
+        salva_voto(voto, st.session_state.nome_voto)
+        st.success("Voto inviato! Grazie.")
         st.balloons()
-        time.sleep(3)
-        # Log out automatico
+        time.sleep(2)
         st.session_state.loggato = False
-        st.session_state.nome_voto = ""
         st.rerun()
