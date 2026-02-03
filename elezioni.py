@@ -59,7 +59,7 @@ CANDIDATI_P = {
 
 CANDIDATI_C = {
     "Lorenzo Cogliolo": "img/Lorenzo Cogliolo.jpg",
-    "Margherita Monti 2": "img/Margherita Monti.jpg",
+    "Margherita Monti": "img/Margherita Monti.jpg",
     "Marco Zac Di Fraia": "img/Marco Zac Di Fraia.jpg",
     "Mara Moreale": "img/Mara Moreale.jpg",
     "Consigliere 5": "img/c5.jpg",
@@ -148,3 +148,4 @@ if st.button("INVIA VOTO DEFINITIVO"):
         time.sleep(2)
         st.session_state.loggato = False
         st.rerun()
+
