@@ -4,7 +4,7 @@ import os
 import time
 
 # --- CONFIGURAZIONE ---
-st.set_page_config(page_title="Elezioni APS", layout="wide")
+st.set_page_config(page_title="Elezioni Amel Italia", layout="wide")
 
 # CSS per immagini circolari e stile box
 st.markdown("""
@@ -123,4 +123,5 @@ if st.button("INVIA VOTO DEFINITIVO"):
         time.sleep(2)
         st.session_state.loggato = False
         st.rerun()
+
 
