@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # --- CONFIGURAZIONE ---
-st.set_page_config(page_title="Elezioni APS", layout="centered")
+st.set_page_config(page_title="Elezioni Amel Italia", layout="centered")
 
 FILE_RISULTATI = "risultati_anonimi.csv"
 FILE_REGISTRO_VOTANTI = "registro_voto_effettuato.txt"
@@ -16,8 +16,8 @@ SOCI_AUTORIZZATI = sorted([
 ])
 
 # CANDIDATI (Aggiorna qui i nomi reali)
-CANDIDATI_PRESIDENTE = ["Candidato Pres A", "Candidato Pres B"]
-CANDIDATI_CONSIGLIO = ["Consigliere 1", "Consigliere 2", "Consigliere 3", "Consigliere 4", "Consigliere 5", "Consigliere 6"]
+CANDIDATI_PRESIDENTE = ["Roberto Renino", "Candidato Pres B"]
+CANDIDATI_CONSIGLIO = ["Marco Zac Di Fraia", "Margherita Monti", "Lorenzo Cogliolo", "Mara Moreale", "Consigliere 5", "Consigliere 6"]
 
 # --- FUNZIONI LOGICHE ---
 def ha_gia_votato(nome_selezionato):
@@ -114,3 +114,4 @@ if st.button("INVIA VOTO DEFINITIVO"):
         import time
         time.sleep(2)
         st.rerun()
+
