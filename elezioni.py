@@ -6,22 +6,39 @@ import time
 # --- CONFIGURAZIONE ---
 st.set_page_config(page_title="Elezioni Amel Italia", layout="wide")
 
-# CSS semplificato: solo per pulizia e uniformità dei box
+# CSS PER USARE GLI SLOT PER I NOMI E CENTRARE LE FOTO
 st.markdown("""
     <style>
-    .candidate-card {
+    /* Stile per il testo del nome dentro lo slot (header della colonna) */
+    .stMarkdown h3 {
         text-align: center;
-        padding: 10px;
-        border: 1px solid #eee;
-        border-radius: 10px;
-        background-color: #fcfcfc;
+        font-size: 1.1rem !important;
+        background-color: #262730; /* Colore scuro coordinato */
+        color: white;
+        padding: 5px;
+        border-radius: 5px;
+        margin-bottom: 15px !important;
     }
-    /* Forza tutte le immagini alla stessa larghezza */
+
+    /* Centratura e distanziamento foto */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+        padding-top: 10px;
+        padding-bottom: 20px;
+    }
+
     [data-testid="stImage"] img {
+        border-radius: 10px;
         width: 100% !important;
         height: auto !important;
-        max-width: 200px !important;
-        margin: 0 auto;
+        max-width: 180px !important; /* Leggermente più piccole per centrarle meglio */
+        border: 2px solid #444;
+    }
+    
+    /* Rimuove margini extra dalle colonne */
+    [data-testid="column"] {
+        padding: 0 10px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -35,7 +52,6 @@ SOCI_AUTORIZZATI = sorted([
     "Stefania", "Marcello", "Matilde", "Tommaso", "Leonardo"
 ])
 
-# DATI CANDIDATI
 CANDIDATI_P = {
     "Roberto Renino": "img/Roberto Renino.jpg",
     "Candidato Pres B": "img/pres_b.jpg"
@@ -91,26 +107,22 @@ st.header("Candidati alla Presidenza")
 cols_p = st.columns(len(CANDIDATI_P))
 for i, (nome, img_path) in enumerate(CANDIDATI_P.items()):
     with cols_p[i]:
-        st.markdown('<div class="candidate-card">', unsafe_allow_html=True)
+        st.subheader(nome) # Inserisce il nome nello slot superiore
         if os.path.exists(img_path):
-            st.image(img_path, use_container_width=True)
+            st.image(img_path)
         else:
-            st.info(f"Foto: {nome}")
-        st.write(f"**{nome}**")
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.info("Immagine non disponibile")
 
-# SEZIONE CONSIGLIO (Stessa dimensione)
+# SEZIONE CONSIGLIO
 st.header("Candidati al Consiglio Direttivo")
 cols_c = st.columns(len(CANDIDATI_C))
 for i, (nome, img_path) in enumerate(CANDIDATI_C.items()):
     with cols_c[i]:
-        st.markdown('<div class="candidate-card">', unsafe_allow_html=True)
+        st.subheader(nome) # Inserisce il nome nello slot superiore
         if os.path.exists(img_path):
-            st.image(img_path, use_container_width=True)
+            st.image(img_path)
         else:
-            st.info(f"Foto: {nome}")
-        st.write(f"**{nome}**")
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.info("Immagine non disponibile")
 
 st.divider()
 
@@ -127,13 +139,12 @@ s4 = st.selectbox("Consigliere 4", ["-- Seleziona --"] + [c for c in c_list if c
 
 if st.button("INVIA VOTO DEFINITIVO"):
     if "-- Seleziona --" in [v_pres, s1, s2, s3, s4]:
-        st.error("⚠️ Errore: seleziona tutte le 5 cariche richieste.")
+        st.error("⚠️ Errore: seleziona tutti i candidati richiesti.")
     else:
         voto = {"Presidente": v_pres, "C1": s1, "C2": s2, "C3": s3, "C4": s4}
         salva_voto(voto, st.session_state.nome_voto)
-        st.success("Voto inviato! Grazie.")
+        st.success("Voto registrato con successo!")
         st.balloons()
         time.sleep(2)
         st.session_state.loggato = False
         st.rerun()
-
