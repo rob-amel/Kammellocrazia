@@ -1,117 +1,125 @@
 import streamlit as st
 import pandas as pd
 import os
+import time
 
 # --- CONFIGURAZIONE ---
-st.set_page_config(page_title="Elezioni Amel Italia", layout="centered")
+st.set_page_config(page_title="Elezioni APS", layout="wide")
+
+# CSS per immagini circolari e stile box
+st.markdown("""
+    <style>
+    .candidate-card {
+        text-align: center;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 15px;
+        background-color: #f9f9f9;
+    }
+    .stImage > img {
+        border-radius: 50%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border: 3px solid #007bff;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 FILE_RISULTATI = "risultati_anonimi.csv"
 FILE_REGISTRO_VOTANTI = "registro_voto_effettuato.txt"
 
-# LISTA SOCI
-SOCI_AUTORIZZATI = sorted([
-    "Roberto R", "Roberto V", "Andrea", "Marco", "Mara", "Federica", "Giulia", 
-    "Chiara", "Alaa", "Costanza", "Lorenzo", "Margherita", 
-    "Sofia", "Stefania", "Marcello", "Matilde", "Tommaso", "Leonardo"
-])
+SOCI_AUTORIZZATI = sorted(["Roberto R", "Roberto V", "Andrea", "Marco", "Mara", "Federica", "Giulia", "Chiara", "Alaa", "Costanza", "Lorenzo", "Margherita", "Sofia", "Stefania", "Marcello", "Matilde", "Tommaso", "Leonardo"])
 
-# CANDIDATI (Aggiorna qui i nomi reali)
-CANDIDATI_PRESIDENTE = ["Roberto Renino", "Candidato Pres B"]
-CANDIDATI_CONSIGLIO = ["Marco Zac Di Fraia", "Margherita Monti", "Lorenzo Cogliolo", "Mara Moreale", "Consigliere 5", "Consigliere 6"]
+# Struttura dati candidati (Nome: Percorso Immagine)
+CANDIDATI_P = {
+    "Candidato Pres A": "img/pres_a.jpg",
+    "Candidato Pres B": "img/pres_b.jpg"
+}
 
-# --- FUNZIONI LOGICHE ---
-def ha_gia_votato(nome_selezionato):
-    if not os.path.isfile(FILE_REGISTRO_VOTANTI):
-        return False
+CANDIDATI_C = {
+    "Consigliere 1": "img/c1.jpg",
+    "Consigliere 2": "img/c2.jpg",
+    "Consigliere 3": "img/c3.jpg",
+    "Consigliere 4": "img/c4.jpg",
+    "Consigliere 5": "img/c5.jpg",
+    "Consigliere 6": "img/c6.jpg"
+}
+
+# --- FUNZIONI ---
+def ha_gia_votato(nome):
+    if not os.path.isfile(FILE_REGISTRO_VOTANTI): return False
     with open(FILE_REGISTRO_VOTANTI, "r") as f:
-        return nome_selezionato in f.read().splitlines()
+        return nome in f.read().splitlines()
 
-def salva_voto_segreto(voto_dati, nome_utente):
-    df = pd.DataFrame([voto_dati])
-    if not os.path.isfile(FILE_RISULTATI):
-        df.to_csv(FILE_RISULTATI, index=False)
-    else:
-        df.to_csv(FILE_RISULTATI, mode='a', index=False, header=False)
-    with open(FILE_REGISTRO_VOTANTI, "a") as f:
-        f.write(nome_utente + "\n")
+def salva_voto(voto, nome):
+    pd.DataFrame([voto]).to_csv(FILE_RISULTATI, mode='a', index=False, header=not os.path.isfile(FILE_RISULTATI))
+    with open(FILE_REGISTRO_VOTANTI, "a") as f: f.write(nome + "\n")
 
 # --- LOGIN ---
 if 'loggato' not in st.session_state:
-    st.session_state.loggato = False
-    st.session_state.nome_voto = ""
+    st.session_state.loggato, st.session_state.nome_voto = False, ""
 
 if not st.session_state.loggato:
     st.title("🗳️ Accesso Elezioni APS")
     scelta = st.selectbox("Seleziona il tuo nome:", ["-- Scegli dalla lista --"] + SOCI_AUTORIZZATI)
-    
     if st.button("ACCEDI"):
         if scelta != "-- Scegli dalla lista --":
-            if ha_gia_votato(scelta):
-                st.error(f"{scelta} ha già votato.")
+            if ha_gia_votato(scelta): st.error("Hai già votato.")
             else:
-                st.session_state.loggato = True
-                st.session_state.nome_voto = scelta
+                st.session_state.loggato, st.session_state.nome_voto = True, scelta
                 st.rerun()
     
-    # Area Admin in Sidebar
     with st.sidebar:
-        st.header("Admin")
-        p_admin = st.text_input("Password", type="password")
-        if p_admin == "K_ammello123":
+        if st.text_input("Password Admin", type="password") == "K_ammello123":
             if os.path.isfile(FILE_RISULTATI):
                 st.download_button("SCARICA RISULTATI", pd.read_csv(FILE_RISULTATI).to_csv(index=False), "voti.csv")
     st.stop()
 
-# --- INTERFACCIA DI VOTO DINAMICA ---
-st.title("Scheda Elettorale")
-st.info(f"Socio: **{st.session_state.nome_voto}**")
+# --- INTERFACCIA DI VOTO ---
+st.title(f"Scheda Elettorale: {st.session_state.nome_voto}")
 
-# 1. PRESIDENTE
-st.subheader("1. Elezione Presidente")
-voto_p = st.selectbox("Scegli il Presidente:", ["-- Seleziona --"] + CANDIDATI_PRESIDENTE)
+# SEZIONE FOTO CANDIDATI
+st.header("Candidati alla Presidenza")
+cols_p = st.columns(len(CANDIDATI_P))
+for i, (nome, img_path) in enumerate(CANDIDATI_P.items()):
+    with cols_p[i]:
+        st.markdown(f'<div class="candidate-card">', unsafe_allow_html=True)
+        try: st.image(img_path)
+        except: st.warning("Foto mancante")
+        st.write(f"**{nome}**")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-st.divider()
-
-# 2. CONSIGLIO (Filtro istantaneo senza st.form)
-st.subheader("2. Elezione Consiglio Direttivo")
-st.caption("I nomi già selezionati spariranno automaticamente dagli altri menu.")
-
-# Slot 1
-s1 = st.selectbox("Membro 1", ["-- Seleziona --"] + CANDIDATI_CONSIGLIO, key="s1")
-
-# Slot 2 (Filtra s1)
-opz2 = [c for c in CANDIDATI_CONSIGLIO if c != s1]
-s2 = st.selectbox("Membro 2", ["-- Seleziona --"] + opz2, key="s2")
-
-# Slot 3 (Filtra s1, s2)
-opz3 = [c for c in CANDIDATI_CONSIGLIO if c not in [s1, s2]]
-s3 = st.selectbox("Membro 3", ["-- Seleziona --"] + opz3, key="s3")
-
-# Slot 4 (Filtra s1, s2, s3)
-opz4 = [c for c in CANDIDATI_CONSIGLIO if c not in [s1, s2, s3]]
-s4 = st.selectbox("Membro 4", ["-- Seleziona --"] + opz4, key="s4")
+st.header("Candidati al Consiglio Direttivo")
+cols_c = st.columns(len(CANDIDATI_C))
+for i, (nome, img_path) in enumerate(CANDIDATI_C.items()):
+    with cols_c[i]:
+        st.markdown(f'<div class="candidate-card">', unsafe_allow_html=True)
+        try: st.image(img_path)
+        except: st.warning("Foto mancante")
+        st.write(f"**{nome}**")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
-# Validazione e Invio
+# SEZIONE SELEZIONE (DINAMICA)
+st.header("Esprimi il tuo voto")
+v_pres = st.selectbox("Presidente:", ["-- Seleziona --"] + list(CANDIDATI_P.keys()))
+
+st.subheader("Membri del Consiglio")
+c_list = list(CANDIDATI_C.keys())
+s1 = st.selectbox("Consigliere 1", ["-- Seleziona --"] + c_list)
+s2 = st.selectbox("Consigliere 2", ["-- Seleziona --"] + [c for c in c_list if c != s1])
+s3 = st.selectbox("Consigliere 3", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2]])
+s4 = st.selectbox("Consigliere 4", ["-- Seleziona --"] + [c for c in c_list if c not in [s1, s2, s3]])
+
 if st.button("INVIA VOTO DEFINITIVO"):
-    voti_consiglio = [s1, s2, s3, s4]
-    if voto_p == "-- Seleziona --" or "-- Seleziona --" in voti_consiglio:
-        st.error("⚠️ Errore: Devi selezionare tutti i 5 membri richiesti (1 Presidente + 4 Consiglieri) prima di inviare.")
+    if "-- Seleziona --" in [v_pres, s1, s2, s3, s4]:
+        st.error("⚠️ Seleziona tutti i candidati richiesti!")
     else:
-        voto_finale = {
-            "Presidente": voto_p,
-            "Consigliere_1": s1, "Consigliere_2": s2, 
-            "Consigliere_3": s3, "Consigliere_4": s4
-        }
-        salva_voto_segreto(voto_finale, st.session_state.nome_voto)
-        st.success("Voto registrato! Grazie.")
+        voto = {"Presidente": v_pres, "C1": s1, "C2": s2, "C3": s3, "C4": s4}
+        salva_voto(voto, st.session_state.nome_voto)
+        st.success("Voto registrato!")
         st.balloons()
-        # Reset per chiudere la sessione
-        st.session_state.loggato = False
-        st.session_state.nome_voto = ""
-        # Piccola pausa per mostrare il successo prima del rerun
-        import time
         time.sleep(2)
+        st.session_state.loggato = False
         st.rerun()
-
