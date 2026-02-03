@@ -136,3 +136,4 @@ if st.button("INVIA VOTO DEFINITIVO"):
         time.sleep(2)
         st.session_state.loggato = False
         st.rerun()
+
