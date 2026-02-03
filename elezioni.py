@@ -57,7 +57,7 @@ SOCI_AUTORIZZATI = sorted(["Roberto R", "Roberto V", "Andrea", "Marco", "Mara", 
 
 CANDIDATI_P = {"Roberto Renino": "img/Roberto Renino.jpg", "Candidato Pres B": "img/pres_b.jpg"}
 CANDIDATI_C = {
-    "Lorenzo Cogliolo": "img/Lorenzo Cogliolo.jpg", "Margherita Monti 2": "img/Margherita Monti.jpg",
+    "Lorenzo Cogliolo": "img/Lorenzo Cogliolo.jpg", "Margherita Monti": "img/Margherita Monti.jpg",
     "Marco Zac Di Fraia": "img/Marco Zac Di Fraia.jpg", "Mara Moreale": "img/Mara Moreale.jpg",
     "Consigliere 5": "img/c5.jpg", "Consigliere 6": "img/c6.jpg"
 }
@@ -151,3 +151,4 @@ if st.button(L['submit']):
         time.sleep(2)
         st.session_state.loggato = False
         st.rerun()
+
