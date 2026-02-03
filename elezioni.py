@@ -2,85 +2,108 @@ import streamlit as st
 import pandas as pd
 import os
 
-# CONFIGURAZIONE PAGINA
-st.set_page_config(page_title="Elezioni APS - Votazione Online", layout="centered")
-
-# --- DATABASE CANDIDATI (Modifica qui i nomi) ---
-CANDIDATI_PRESIDENTE = ["INSERIRE NOME QUI 1", "INSERIRE NOME QUI 2", "Scheda Bianca"]
-CANDIDATI_CONSIGLIO = ["NOME CONSIGLIERE 1", "NOME CONSIGLIERE 2", "NOME CONSIGLIERE 3", "NOME CONSIGLIERE 4", "NOME CONSIGLIERE 5", "Scheda Bianca"]
+# --- CONFIGURAZIONE ---
+st.set_page_config(page_title="Elezioni APS", layout="centered")
 
 FILE_VOTI = "voti_elezioni.csv"
+# Lista soci autorizzati (Puoi caricarla da un altro CSV se preferisci)
+SOCI_AUTORIZZATI = ["SOCIO001", "SOCIO002", "SOCIO003", "SOCIO004", "SOCIO005"] 
+
+CANDIDATI_PRESIDENTE = ["INSERIRE NOME QUI 1", "INSERIRE NOME QUI 2", "Scheda Bianca"]
+CANDIDATI_CONSIGLIO = ["NOME 1", "NOME 2", "NOME 3", "NOME 4", "NOME 5", "Scheda Bianca"]
+
+# --- FUNZIONI UTILI ---
+def ha_gia_votato(socio_id):
+    if not os.path.isfile(FILE_VOTI):
+        return False
+    df = pd.read_csv(FILE_VOTI)
+    return socio_id in df['ID_Socio'].astype(str).values
 
 def salva_voto(dati):
     df = pd.DataFrame([dati])
-    # Se il file non esiste, crea con header, altrimenti aggiunge riga
     if not os.path.isfile(FILE_VOTI):
         df.to_csv(FILE_VOTI, index=False)
     else:
         df.to_csv(FILE_VOTI, mode='a', index=False, header=False)
 
-st.title("🗳️ Rinnovo Cariche Sociali APS")
-st.markdown("---")
+# --- INTERFACCIA DI LOGIN ---
+if 'autenticato' not in st.session_state:
+    st.session_state.autenticato = False
+    st.session_state.socio_id = ""
+
+if not st.session_state.autenticato:
+    st.title("🔑 Accesso Area Voto")
+    input_id = st.text_input("Inserisci il tuo Codice Socio (es. SOCIO001):").strip().upper()
+    
+    if st.button("Accedi"):
+        if input_id in SOCI_AUTORIZZATI:
+            if ha_gia_votato(input_id):
+                st.error("Risulta che tu abbia già espresso il tuo voto. Non è possibile votare due volte.")
+            else:
+                st.session_state.autenticato = True
+                st.session_state.socio_id = input_id
+                st.rerun()
+        else:
+            st.error("Codice Socio non valido.")
+    
+    st.stop() # Blocca l'esecuzione qui finché non si è loggati
+
+# --- INTERFACCIA DI VOTO (Se autenticato) ---
+st.title(f"🗳️ Benvenuto Socio {st.session_state.socio_id}")
+st.info("Esprimi le tue preferenze e conferma in fondo alla pagina.")
 
 # SEZIONE 1: PRESIDENTE
-st.header("Sezione 1: Elezione Presidente")
-voto_pres = st.radio("Seleziona il candidato Presidente:", CANDIDATI_PRESIDENTE)
+st.header("1. Elezione Presidente")
+voto_pres = st.radio("Candidato Presidente:", CANDIDATI_PRESIDENTE)
 
 st.markdown("---")
 
-# SEZIONE 2: CONSIGLIO DIRETTIVO (Logica di esclusione)
-st.header("Sezione 2: Elezione Consiglio Direttivo")
-st.info("Puoi esprimere fino a 4 preferenze diverse. Un candidato già selezionato non apparirà negli slot success.")
+# SEZIONE 2: CONSIGLIO DIRETTIVO
+st.header("2. Elezione Consiglio Direttivo (4 slot)")
 
-# Slot 1
-opzioni_1 = CANDIDATI_CONSIGLIO
-slot1 = st.selectbox("Primo membro del consiglio:", ["Seleziona..."] + opzioni_1)
+col1, col2 = st.columns(2)
+with col1:
+    s1 = st.selectbox("Slot 1:", ["Seleziona..."] + CANDIDATI_CONSIGLIO)
+    # Filtro dinamico per Slot 2
+    opz2 = [c for c in CANDIDATI_CONSIGLIO if c == "Scheda Bianca" or c != s1]
+    s2 = st.selectbox("Slot 2:", ["Seleziona..."] + opz2)
 
-# Slot 2 (Filtra Slot 1)
-opzioni_2 = [c for c in CANDIDATI_CONSIGLIO if c != slot1 or c == "Scheda Bianca"]
-slot2 = st.selectbox("Secondo membro del consiglio:", ["Seleziona..."] + opzioni_2)
+with col2:
+    # Filtro dinamico per Slot 3
+    opz3 = [c for c in CANDIDATI_CONSIGLIO if c == "Scheda Bianca" or c not in [s1, s2]]
+    s3 = st.selectbox("Slot 3:", ["Seleziona..."] + opz3)
+    # Filtro dinamico per Slot 4
+    opz4 = [c for c in CANDIDATI_CONSIGLIO if c == "Scheda Bianca" or c not in [s1, s2, s3]]
+    s4 = st.selectbox("Slot 4:", ["Seleziona..."] + opz4)
 
-# Slot 3 (Filtra Slot 1 e 2)
-opzioni_3 = [c for c in CANDIDATI_CONSIGLIO if (c not in [slot1, slot2]) or c == "Scheda Bianca"]
-slot3 = st.selectbox("Terzo membro del consiglio:", ["Seleziona..."] + opzioni_3)
-
-# Slot 4 (Filtra Slot 1, 2 e 3)
-opzioni_4 = [c for c in CANDIDATI_CONSIGLIO if (c not in [slot1, slot2, slot3]) or c == "Scheda Bianca"]
-slot4 = st.selectbox("Quarto membro del consiglio:", ["Seleziona..."] + opzioni_4)
-
-st.markdown("---")
-
-# INVIO VOTO
-if st.button("INVIA IL TUO VOTO"):
-    # Validazione rapida
-    voti_consiglio = [slot1, slot2, slot3, slot4]
-    if "Seleziona..." in voti_consiglio:
-        st.error("Per favore, completa tutte le selezioni del Consiglio Direttivo prima di inviare.")
+if st.button("CONFERMA E INVIA VOTO"):
+    voti_c = [s1, s2, s3, s4]
+    if "Seleziona..." in voti_c:
+        st.error("Devi compilare tutti e 4 gli slot del Consiglio (puoi usare 'Scheda Bianca').")
     else:
-        risultati = {
+        dati_voto = {
+            "ID_Socio": st.session_state.socio_id,
             "Presidente": voto_pres,
-            "Consigliere_1": slot1,
-            "Consigliere_2": slot2,
-            "Consigliere_3": slot3,
-            "Consigliere_4": slot4
+            "Consigliere_1": s1,
+            "Consigliere_2": s2,
+            "Consigliere_3": s3,
+            "Consigliere_4": s4
         }
-        salva_voto(risultati)
-        st.success("Voto registrato con successo! Grazie per aver partecipato.")
+        salva_voto(dati_voto)
+        st.success("Voto inviato! La sessione verrà chiusa.")
+        # Reset sessione per sicurezza
+        st.session_state.autenticato = False 
         st.balloons()
-        # Nota: In una web app reale qui andrebbe un redirect o un blocco sessione per evitare voti multipli.
+        st.info("Puoi chiudere la pagina.")
 
-# SEZIONE ADMIN (Accessibile solo via codice o URL segreto)
-# Per scaricare il file, l'admin può aggiungere '?admin=true' all'URL o semplicemente gestire il file sul server.
-if st.sidebar.checkbox("Accesso Admin"):
-    password = st.sidebar.text_input("Inserisci Password Admin", type="password")
-    if password == "admin123": # Cambia questa password
+# --- ADMIN PANEL (Sidebar) ---
+with st.sidebar:
+    st.header("Area Amministratore")
+    pwd = st.text_input("Password Admin", type="password")
+    if pwd == "admin_aps_2024":
         if os.path.isfile(FILE_VOTI):
-            with open(FILE_VOTI, "rb") as file:
-                st.sidebar.download_button(
-                    label="Scarica Risultati CSV",
-                    data=file,
-                    file_name="risultati_elezioni.csv",
-                    mime="text/csv"
-                )
+            df_risultati = pd.read_csv(FILE_VOTI)
+            st.write(f"Voti totali: {len(df_risultati)}")
+            st.download_button("Scarica Risultati CSV", df_risultati.to_csv(index=False), "risultati.csv")
         else:
-            st.sidebar.warning("Nessun voto ancora registrato.")
+            st.write("Nessun voto presente.")
