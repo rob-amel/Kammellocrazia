@@ -32,15 +32,15 @@ SOCI_AUTORIZZATI = sorted(["Roberto R", "Roberto V", "Andrea", "Marco", "Mara", 
 
 # Struttura dati candidati (Nome: Percorso Immagine)
 CANDIDATI_P = {
-    "Candidato Pres A": "img/pres_a.jpg",
+    "Roberto Renino": "img/Roberto Renino.jpg",
     "Candidato Pres B": "img/pres_b.jpg"
 }
 
 CANDIDATI_C = {
-    "Consigliere 1": "img/c1.jpg",
-    "Consigliere 2": "img/c2.jpg",
-    "Consigliere 3": "img/c3.jpg",
-    "Consigliere 4": "img/c4.jpg",
+    "Lorenzo Cogliolo": "img/Lorenzo Cogliolo.jpg",
+    "Margherita Monti 2": "img/Margherita Monti.jpg",
+    "Marco Zac Di Fraia": "img/Marco Zac Di Fraia.jpg",
+    "Mara Moreale": "img/Mara Moreale.jpg",
     "Consigliere 5": "img/c5.jpg",
     "Consigliere 6": "img/c6.jpg"
 }
@@ -123,3 +123,4 @@ if st.button("INVIA VOTO DEFINITIVO"):
         time.sleep(2)
         st.session_state.loggato = False
         st.rerun()
+
