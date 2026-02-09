@@ -1,0 +1,4 @@
+Lorenzo Cogliolo,img/Lorenzo Cogliolo.jpg
+Margherita Monti,img/Margherita Monti.jpg
+Marco Zac Di Fraia,img/Marco Zac Di Fraia.jpg
+Mara Moreale,img/Mara Moreale.jpg
